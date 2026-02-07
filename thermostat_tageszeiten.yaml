@@ -1,0 +1,106 @@
+blueprint:
+  name: Thermostat – Tageszeiten (Gerät, Zeiten & Temperaturen wählbar)
+  description: >
+    Zeitabhängige Temperatursteuerung für ein frei auswählbares Thermostat
+    (Nacht, Morgen, Tag, Abend).
+  domain: automation
+
+  input:
+    thermostat:
+      name: Thermostat
+      selector:
+        entity:
+          domain: climate
+
+    night_temp:
+      name: Nachttemperatur (°C)
+      default: 17
+      selector:
+        number:
+          min: 5
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+
+    morning_temp:
+      name: Morgentemperatur (°C)
+      default: 21
+      selector:
+        number:
+          min: 5
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+
+    day_temp:
+      name: Tagtemperatur (°C)
+      default: 19
+      selector:
+        number:
+          min: 5
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+
+    morning_time:
+      name: Morgen – Heizen ab
+      default: "06:30:00"
+      selector:
+        time: {}
+
+    day_time:
+      name: Tag – Absenkung ab
+      default: "08:30:00"
+      selector:
+        time: {}
+
+    evening_time:
+      name: Abend – Nachtabsenkung ab
+      default: "22:30:00"
+      selector:
+        time: {}
+
+mode: single
+
+trigger:
+  - platform: time
+    at: !input morning_time
+    id: morning
+  - platform: time
+    at: !input day_time
+    id: day
+  - platform: time
+    at: !input evening_time
+    id: evening
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: morning
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat
+            data:
+              temperature: !input morning_temp
+
+      - conditions:
+          - condition: trigger
+            id: day
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat
+            data:
+              temperature: !input day_temp
+
+      - conditions:
+          - condition: trigger
+            id: evening
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat
+            data:
+              temperature: !input night_temp
